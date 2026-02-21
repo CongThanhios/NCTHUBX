@@ -1,30 +1,20 @@
 -- ts file was generated at discord.gg/25ms
 
-repeat
-    wait()
-until game:IsLoaded()
-repeat
-    wait()
-until game:GetService('Players')
-repeat
-    wait()
-until game:GetService('Players').LocalPlayer
-repeat
-    wait()
-until game:GetService('Players').LocalPlayer.PlayerGui
-repeat
-    wait()
-until game:GetService('ReplicatedStorage').Effect.Container
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-if not game:IsLoaded() then
-    local _Message = Instance.new('Message', workspace)
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 200)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -100)
+Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.Parent = ScreenGui
 
-    _Message.Text = 'Wait Game Loading'
-
-    game.Loaded:Wait()
-    _Message:Destroy()
-    task.wait(15)
-end
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Size = UDim2.new(1, 0, 0, 50)
+TextLabel.Text = "NCTX HUB"
+TextLabel.TextColor3 = Color3.new(1,1,1)
+TextLabel.BackgroundTransparency = 1
+TextLabel.Parent = Frame
 
 _G.Settings = {
     Main = {
