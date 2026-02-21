@@ -22,7 +22,7 @@
 ## 🖼 Script Preview
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/CongThanhios/NCTHUBX/main/preview.png" width="750">
+  <img src="https://i.ibb.co/LhxV817R/image.png" width="750">
 </p>
 
 ---
