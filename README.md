@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/CongThanhios/NCTHUBX/main/preview.png" width="140">
+  <img src="https://i.ibb.co/v6swtrLx/unnamed-1.jpg" width="140">
 </p>
 
 <h1 align="center">NCTHUBX</h1>
