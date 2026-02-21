@@ -1,0 +1,491 @@
+--==================================================
+-- SERVICES
+--==================================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+--==================================================
+-- PLAYER
+--==================================================
+local lp = Players.LocalPlayer
+local chr = lp.Character or lp.CharacterAdded:Wait()
+local hum = chr:WaitForChild("Humanoid")
+local hrp = chr:WaitForChild("HumanoidRootPart")
+local camera = Workspace.CurrentCamera
+
+lp.CharacterAdded:Connect(function(c)
+    chr = c
+    hum = c:WaitForChild("Humanoid")
+    hrp = c:WaitForChild("HumanoidRootPart")
+    -- Kết nối lại sự kiện để bất tử khi respawn
+    hum.HealthChanged:Connect(function(health)
+        if health < hum.MaxHealth and farmEnabled then
+            hum.Health = hum.MaxHealth
+        end
+    end)
+end)
+
+--==================================================
+-- SETTINGS
+--==================================================
+local farmEnabled = false
+local antiAFKEnabled = true
+local lockCamera = false
+local autoClick = true
+local rotationDistance = 10 -- Khoảng cách xoay quanh Boss (studs)
+local rotationSpeed = 1 -- Tốc độ quay (radians/giây, từ 1-50)
+
+--==================================================
+-- HEAL
+--==================================================
+-- (Đã xóa logic autoHeal)
+
+--==================================================
+-- TIMER
+--==================================================
+local farmStartTime = nil
+local npcCheckTime = 0
+local npcCheckDelay = 0.001 -- Giây giữa các lần kiểm tra Boss
+
+--==================================================
+-- ESP
+--==================================================
+local espBeam = nil
+
+local function createESP(root)
+    if espBeam then espBeam:Destroy() end
+    local beam = Instance.new("Beam")
+    beam.FaceCamera = true
+    beam.Color = ColorSequence.new(Color3.fromRGB(255, 50, 50))
+    beam.Width0 = 0.3
+    beam.Width1 = 0.3
+    beam.Transparency = NumberSequence.new(0.6)
+    local a0 = Instance.new("Attachment", hrp)
+    local a1 = Instance.new("Attachment", root)
+    beam.Attachment0 = a0
+    beam.Attachment1 = a1
+    beam.Parent = Workspace
+    espBeam = beam
+end
+
+local function removeESP()
+    if espBeam then espBeam:Destroy() espBeam = nil end
+end
+
+--==================================================
+-- WEAPON GLOW
+--==================================================
+local glowParts = {}
+
+local function clearGlow()
+    for _, v in pairs(glowParts) do
+        if v and v.Parent then v:Destroy() end
+    end
+    glowParts = {}
+end
+
+local function addGlow(tool)
+    clearGlow()
+    for _, p in pairs(tool:GetDescendants()) do
+        if p:IsA("BasePart") then
+            local pe = Instance.new("ParticleEmitter", p)
+            pe.Color = ColorSequence.new(Color3.fromRGB(0, 255, 100))
+            pe.LightEmission = 0.8
+            pe.Rate = 35
+            pe.Speed = NumberRange.new(0)
+            pe.Lifetime = NumberRange.new(0.4)
+            table.insert(glowParts, pe)
+        end
+    end
+end
+
+--==================================================
+-- BUY BANDAGE
+--==================================================
+-- (Đã xóa logic autoBuyBandage)
+
+--==================================================
+-- AUTO SYSTEMS
+--==================================================
+-- (Đã xóa task.spawn cho autoBuyBandage và autoHeal)
+
+task.spawn(function()
+    while task.wait(180) do
+        if antiAFKEnabled then
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton1(Vector2.new())
+        end
+    end
+end)
+
+--==================================================
+-- AUTO CLICK FUNCTION
+--==================================================
+local clickCooldown = 0.2
+local lastClickTime = 0
+
+local function performAutoClick()
+    if not autoClick then return end
+    
+    local currentTime = tick()
+    if currentTime - lastClickTime >= clickCooldown then
+        local tool = chr:FindFirstChildOfClass("Tool")
+        if tool then
+            tool:Activate()
+            lastClickTime = currentTime
+        end
+    end
+end
+
+--==================================================
+-- FIND BOSS
+--==================================================
+local function getBoss()
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Model")
+            and v:FindFirstChild("Humanoid")
+            and v:FindFirstChild("HumanoidRootPart")
+            and v.Humanoid.Health > 0
+            and v.Name:lower():find("boss") then
+            return v
+        end
+    end
+end
+
+--==================================================
+-- SET POSITION ROTATING AROUND BOSS WITH PRONE ORIENTATION
+--==================================================
+local function setPositionRotatingAroundBoss(boss)
+    if not boss then return end
+    
+    local root = boss.HumanoidRootPart
+    local angle = tick() * rotationSpeed
+    local offset = Vector3.new(math.sin(angle) * rotationDistance, 0, math.cos(angle) * rotationDistance) -- Xoay quanh ở cùng chiều cao
+    local position = root.Position + offset
+    hrp.CFrame = CFrame.lookAt(position, root.Position) -- Đứng thẳng, luôn nhìn vào Boss
+end
+
+--==================================================
+-- ATTACK BOSS
+--==================================================
+local function attackBoss(boss)
+    if not boss then return false end
+    
+    local root = boss.HumanoidRootPart
+    local nh = boss.Humanoid
+    
+    -- Tạo ESP nếu chưa có
+    if not espBeam then 
+        createESP(root)
+    end
+    
+    -- Auto click weapon
+    local tool = chr:FindFirstChildOfClass("Tool")
+    if tool then
+        addGlow(tool)
+    else
+        clearGlow()
+    end
+    
+    -- Camera lock
+    if lockCamera then
+        camera.CameraType = Enum.CameraType.Custom
+        camera.CameraSubject = nh
+    else
+        camera.CameraSubject = hum
+    end
+    
+    return true
+end
+
+--==================================================
+-- UI COMPACT DESIGN
+--==================================================
+if lp.PlayerGui:FindFirstChild("KiwiBoss") then
+    lp.PlayerGui.KiwiBoss:Destroy()
+end
+
+local gui = Instance.new("ScreenGui", lp.PlayerGui)
+gui.Name = "KiwiBoss"
+gui.ResetOnSpawn = false
+
+-- Main Frame nhỏ gọn
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 240, 0, 280) -- Tăng chiều cao để thêm textbox
+frame.Position = UDim2.new(0.02, 0, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(240, 245, 250)
+frame.Active = true
+frame.Draggable = true
+
+local corner = Instance.new("UICorner", frame)
+corner.CornerRadius = UDim.new(0, 6)
+
+-- Header đơn giản
+local header = Instance.new("Frame", frame)
+header.Size = UDim2.new(1, 0, 0, 30)
+header.BackgroundColor3 = Color3.fromRGB(80, 150, 220)
+
+local headerCorner = Instance.new("UICorner", header)
+headerCorner.CornerRadius = UDim.new(0, 6)
+
+local title = Instance.new("TextLabel", header)
+title.Size = UDim2.new(1, 0, 1, 0)
+title.Text = "NCT Hub | BacNinhCity"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.BackgroundTransparency = 1
+
+-- Content area
+local content = Instance.new("Frame", frame)
+content.Size = UDim2.new(1, -10, 1, -40)
+content.Position = UDim2.new(0, 5, 0, 35)
+content.BackgroundTransparency = 1
+
+-- Function tạo nút nhỏ vuông
+local function createSmallButton(text, yPos, initialState, color)
+    local button = Instance.new("TextButton", content)
+    button.Size = UDim2.new(1, 0, 0, 28)
+    button.Position = UDim2.new(0, 0, 0, yPos)
+    button.Text = text
+    button.BackgroundColor3 = color
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 13
+    button.AutoButtonColor = true
+    
+    -- Hiệu ứng hover nhẹ
+    button.MouseEnter:Connect(function()
+        button.BackgroundTransparency = 0.2
+    end)
+    
+    button.MouseLeave:Connect(function()
+        button.BackgroundTransparency = 0
+    end)
+    
+    return button
+end
+
+-- Function tạo input box
+local function createInputBox(labelText, yPos, defaultValue, placeholder)
+    local inputFrame = Instance.new("Frame", content)
+    inputFrame.Size = UDim2.new(1, 0, 0, 50)
+    inputFrame.Position = UDim2.new(0, 0, 0, yPos)
+    inputFrame.BackgroundTransparency = 1
+    
+    local label = Instance.new("TextLabel", inputFrame)
+    label.Size = UDim2.new(0.5, 0, 0, 20)
+    label.Text = labelText
+    label.TextColor3 = Color3.fromRGB(60, 60, 60)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 12
+    label.BackgroundTransparency = 1
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local textBox = Instance.new("TextBox", inputFrame)
+    textBox.Size = UDim2.new(0.5, -5, 0, 24)
+    textBox.Position = UDim2.new(0.5, 5, 0, 0)
+    textBox.Text = tostring(defaultValue)
+    textBox.PlaceholderText = placeholder or ""
+    textBox.BackgroundColor3 = Color3.new(1, 1, 1)
+    textBox.BorderColor3 = Color3.fromRGB(200, 200, 200)
+    textBox.TextColor3 = Color3.fromRGB(60, 60, 60)
+    textBox.Font = Enum.Font.Gotham
+    textBox.TextSize = 12
+    textBox.ClearTextOnFocus = false
+    
+    return textBox
+end
+
+-- Tạo các nút
+local buttonY = 0
+local buttonSpacing = 32
+
+local farmBtn = createSmallButton("▶ Start Farm", buttonY, false, Color3.fromRGB(70, 160, 70))
+buttonY = buttonY + buttonSpacing
+
+local afkBtn = createSmallButton("⏰ Anti-AFK: ON", buttonY, true, Color3.fromRGB(250, 180, 50))
+buttonY = buttonY + buttonSpacing
+
+local camBtn = createSmallButton("📷 Lock Camera: OFF", buttonY, false, Color3.fromRGB(90, 120, 200))
+buttonY = buttonY + buttonSpacing
+
+local clickBtn = createSmallButton("⚡ Auto Attack: ON", buttonY, true, Color3.fromRGB(50, 180, 220))
+buttonY = buttonY + buttonSpacing
+
+-- Tạo input boxes
+local distanceBox = createInputBox("Khoảng cách:", buttonY, rotationDistance, "10")
+buttonY = buttonY + 45
+
+local speedBox = createInputBox("Tốc độ quay (1-50):", buttonY, rotationSpeed, "1")
+buttonY = buttonY + 45
+
+--==================================================
+-- HP + TIMER UI COMPACT
+--==================================================
+if lp.PlayerGui:FindFirstChild("KiwiHP") then
+    lp.PlayerGui.KiwiHP:Destroy()
+end
+
+local hpGui = Instance.new("ScreenGui", lp.PlayerGui)
+hpGui.Name = "KiwiHP"
+hpGui.ResetOnSpawn = false
+
+local hpFrame = Instance.new("Frame", hpGui)
+hpFrame.Size = UDim2.new(0, 200, 0, 80)
+hpFrame.Position = UDim2.new(0.5, -100, 0.02, 0)
+hpFrame.BackgroundColor3 = Color3.fromRGB(240, 245, 250)
+hpFrame.BackgroundTransparency = 0.1
+hpFrame.Visible = false -- Ban đầu ẩn
+
+local hpCorner = Instance.new("UICorner", hpFrame)
+hpCorner.CornerRadius = UDim.new(0, 6)
+
+-- Boss Status
+local bossStatus = Instance.new("TextLabel", hpFrame)
+bossStatus.Size = UDim2.new(1, -10, 0, 20)
+bossStatus.Position = UDim2.new(0, 5, 0, 5)
+bossStatus.BackgroundTransparency = 1
+bossStatus.TextColor3 = Color3.fromRGB(60, 60, 60)
+bossStatus.Font = Enum.Font.Gotham
+bossStatus.TextSize = 13
+bossStatus.Text = "Boss: Đang tìm..."
+
+-- HP Text
+local hpText = Instance.new("TextLabel", hpFrame)
+hpText.Size = UDim2.new(1, -10, 0, 20)
+hpText.Position = UDim2.new(0, 5, 0, 25)
+hpText.BackgroundTransparency = 1
+hpText.TextColor3 = Color3.fromRGB(60, 60, 60)
+hpText.Font = Enum.Font.Gotham
+hpText.TextSize = 12
+hpText.Text = "HP: -/-"
+
+-- Timer Text
+local timerText = Instance.new("TextLabel", hpFrame)
+timerText.Size = UDim2.new(1, -10, 0, 20)
+timerText.Position = UDim2.new(0, 5, 0, 45)
+timerText.BackgroundTransparency = 1
+timerText.TextColor3 = Color3.fromRGB(60, 60, 60)
+timerText.Font = Enum.Font.Gotham
+timerText.TextSize = 12
+timerText.Text = "Thời gian: 00:00"
+
+--==================================================
+-- BUTTON EVENTS
+--==================================================
+farmBtn.MouseButton1Click:Connect(function()
+    farmEnabled = not farmEnabled
+    farmBtn.Text = farmEnabled and "■ Stop Farm" or "▶ Start Farm"
+    farmBtn.BackgroundColor3 = farmEnabled and Color3.fromRGB(220, 90, 90) or Color3.fromRGB(70, 160, 70)
+    farmStartTime = farmEnabled and tick() or nil
+    hpFrame.Visible = farmEnabled
+    
+    if not farmEnabled then
+        removeESP()
+        clearGlow()
+        hum.PlatformStand = false
+    end
+end)
+
+afkBtn.MouseButton1Click:Connect(function()
+    antiAFKEnabled = not antiAFKEnabled
+    afkBtn.Text = "⏰ Anti-AFK: " .. (antiAFKEnabled and "ON" or "OFF")
+    afkBtn.BackgroundColor3 = antiAFKEnabled and Color3.fromRGB(250, 180, 50) or Color3.fromRGB(180, 180, 180)
+end)
+
+camBtn.MouseButton1Click:Connect(function()
+    lockCamera = not lockCamera
+    camBtn.Text = "📷 Lock Camera: " .. (lockCamera and "ON" or "OFF")
+    camBtn.BackgroundColor3 = lockCamera and Color3.fromRGB(90, 120, 200) or Color3.fromRGB(180, 180, 180)
+end)
+
+clickBtn.MouseButton1Click:Connect(function()
+    autoClick = not autoClick
+    clickBtn.Text = "⚡ Auto Attack: " .. (autoClick and "ON" or "OFF")
+    clickBtn.BackgroundColor3 = autoClick and Color3.fromRGB(50, 180, 220) or Color3.fromRGB(180, 180, 180)
+end)
+
+-- Input box events
+distanceBox.FocusLost:Connect(function()
+    local value = tonumber(distanceBox.Text)
+    if value and value > 0 then
+        rotationDistance = value
+        distanceBox.Text = tostring(value)
+    else
+        distanceBox.Text = tostring(rotationDistance)
+    end
+end)
+
+speedBox.FocusLost:Connect(function()
+    local value = tonumber(speedBox.Text)
+    if value and value >= 1 and value <= 50 then
+        rotationSpeed = value
+        speedBox.Text = tostring(value)
+    else
+        speedBox.Text = tostring(rotationSpeed)
+    end
+end)
+
+--==================================================
+-- MAIN LOOP
+--==================================================
+RunService.Heartbeat:Connect(function(dt)
+    -- Auto click
+    performAutoClick()
+    
+    if not farmEnabled then
+        return
+    end
+
+    -- Tìm Boss
+    local boss = getBoss()
+    
+    if boss then
+        -- Bật bất tử
+        hum.Health = hum.MaxHealth
+        
+        -- Có Boss: Tấn công
+        if attackBoss(boss) then
+            local nh = boss.Humanoid
+            local cur = math.max(0, nh.Health)
+            local max = nh.MaxHealth
+            
+            bossStatus.Text = "Boss: Đang Farm"
+            hpText.Text = string.format("HP: %d/%d", math.floor(cur), math.floor(max))
+            
+            -- Đặt vị trí xoay quanh Boss
+            setPositionRotatingAroundBoss(boss)
+        end
+    else
+        -- Không có Boss: Chờ respawn
+        removeESP()
+        clearGlow()
+        
+        bossStatus.Text = "Boss: Đang Chờ Respawn"
+        hpText.Text = "HP: -/-"
+    end
+
+    -- Cập nhật timer
+    if farmStartTime then
+        local t = math.floor(tick() - farmStartTime)
+        timerText.Text = string.format("Thời gian: %02d:%02d", math.floor(t / 60), t % 60)
+    end
+end)
+
+-- Status notification
+local function showStatus(text)
+    print("[Boss Farm]: " .. text)
+end
+
+-- Init status
+task.spawn(function()
+    task.wait(1)
+    showStatus("Đã khởi động NCT Hub")
+    showStatus("Farm Boss: Xoay quanh")
+    showStatus("Khoảng cách: Nhập số studs (10 mặc định)")
+    showStatus("Tốc độ quay: Nhập từ 1-50 (1 mặc định)")
+end)
