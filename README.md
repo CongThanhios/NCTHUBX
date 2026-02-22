@@ -43,6 +43,7 @@
 
 ```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/CongThanhios/NCTHUBX/main/NCTXHUB.lua"))()```
+
 ## 📊 Account Stats
 Script hiển thị:
 Level
@@ -68,4 +69,4 @@ https://discord.gg/ARpND3fR�
 Script chỉ dùng cho mục đích giải trí.
 Không chịu trách nhiệm nếu tài khoản Roblox bị khóa.
 �
-NCT IOS © 2026 
+NCT IOS © 2026
