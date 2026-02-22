@@ -43,8 +43,8 @@
 
 ## 🚀 Execute
 
-```lua
-https://raw.githubusercontent.com/CongThanhios/NCTHUBX/main/NCTXHUB.lua"))()
+``` txt
+https://raw.githubusercontent.com/CongThanhios/thanhioslib/refs/heads/main/script%20NCT.txt
 ```
 
 ---
