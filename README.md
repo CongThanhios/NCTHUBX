@@ -22,7 +22,7 @@
 ## 🖼 Script Preview
 
 <p align="center">
-  <img src="https://i.ibb.co/v6swtrLx/unnamed-1.jpg" width="750">
+  <img src="https://i.ibb.co/nNjX8p7F/image.png" width="750">
 </p>
 
 ---
