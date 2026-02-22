@@ -39,34 +39,63 @@
 
 ---
 
+# NCTHUBX
+
 ## 🚀 Execute
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/CongThanhios/NCTHUBX/main/NCTXHUB.lua"))()```
+https://raw.githubusercontent.com/CongThanhios/NCTHUBX/main/NCTXHUB.lua"))()
+```
+
+---
 
 ## 📊 Account Stats
+
 Script hiển thị:
-Level
-Beli
-Frag
-Race
-Sea hiện tại
+
+- Level  
+- Beli  
+- Frag  
+- Race  
+- Sea hiện tại  
+
+---
+
 ## 🎒 Item Checker
-GodHuman
-Curse Dual Katana
-Valkyrie Helm
-Skull Guitar
-Mirror Fractal
-Pull Lever
+
+Script kiểm tra:
+
+- GodHuman  
+- Curse Dual Katana  
+- Valkyrie Helm  
+- Skull Guitar  
+- Mirror Fractal  
+- Pull Lever  
+
+---
+
 ## 🌐 Info
-Developer: CongThanhios
-Team: NCT IOS
-Hub: NCTHUBX
-Status: NCT ON TOP
-## 💬 Discord
-https://discord.gg/ARpND3fR�
+
+- Developer: **CongThanhios**
+- Team: **NCT IOS**
+- Hub: **NCTHUBX**
+- Status: **NCT ON TOP**
+
+---
+
+## 💬 Contact
+
+- Discord: https://discord.gg/ARpND3fR  
+
+---
+
 ## ⚠️ Disclaimer
-Script chỉ dùng cho mục đích giải trí.
+
+Script chỉ dùng cho mục đích giải trí.  
 Không chịu trách nhiệm nếu tài khoản Roblox bị khóa.
-�
+
+---
+
+<p align="center">
 NCT IOS © 2026
+</p>
