@@ -44,7 +44,7 @@
 ## 🚀 Execute
 
 ``` txt
-https://raw.githubusercontent.com/CongThanhios/thanhioslib/refs/heads/main/script%20NCT.txt
+https://raw.githubusercontent.com/CongThanhios/NCTHUBX/refs/heads/main/update%20script%20NCT.txt
 ```
 
 ---
