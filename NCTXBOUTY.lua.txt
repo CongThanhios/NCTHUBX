@@ -1,4 +1,4 @@
--- Cài đặt team và khởi tạo biến
+-- by https://Facebook/nguyencongthanh06
 getgenv().team = "Marines" -- Pirates
 
 -- Đợi game tải hoàn chỉnh
